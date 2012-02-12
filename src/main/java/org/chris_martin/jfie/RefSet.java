@@ -6,12 +6,25 @@ import java.util.Set;
 
 class RefSet<T> implements Iterable<T> {
 
+  static RefSet newRefSet() {
+    return new RefSet();
+  }
+
+  private RefSet() { }
+
   final Set<Wrapper<T>> set = new HashSet<Wrapper<T>>();
 
   void add(T t) {
-    if (t != null) {
+
+    if (t != null)
       set.add(wrap(t));
-    }
+  }
+
+  void addAll(Iterable<T> it) {
+
+    if (it != null)
+      for (T t : it)
+        add(t);
   }
 
   boolean contains(T t) {

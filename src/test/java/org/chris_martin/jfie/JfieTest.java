@@ -25,10 +25,10 @@ public class JfieTest {
     assertEquals(jfie.get(String.class), "abc");
   }
 
-  @Test
+  @Test(expectedExceptions = JfieException.class)
   public void test3() {
     Jfie jfie = jfie("abc");
-    assertNull(jfie.get(Integer.class));
+    jfie.get(Integer.class);
   }
 
   @Test
@@ -39,7 +39,7 @@ public class JfieTest {
     assertTrue(a.getClass() == ArrayList.class);
   }
 
-  @Test(expectedExceptions = BeMoreSpecific.class)
+  @Test(expectedExceptions = JfieException.class)
   public void test5() {
     Jfie jfie = jfie(HashSet.class, ArrayList.class);
     jfie.get(Collection.class);
@@ -57,13 +57,13 @@ public class JfieTest {
     Assert.assertEquals(jfie.get(String.class), "abc");
   }
 
-  @Test(expectedExceptions = BeMoreSpecific.class)
+  @Test(expectedExceptions = JfieException.class)
   public void test8() {
     Jfie jfie = jfie("abc", "def");
     jfie.get(Object.class);
   }
 
-  @Test(expectedExceptions = BeMoreSpecific.class)
+  @Test(expectedExceptions = JfieException.class)
   public void test9() {
     Jfie jfie = jfie("abc", "def");
     jfie.get(String.class);
@@ -100,6 +100,78 @@ public class JfieTest {
   public void test14() {
     Jfie jfie = jfie(ArrayList.class).memoize();
     assertSame(jfie.get(ArrayList.class), jfie.get(Object.class));
+  }
+
+  @Test
+  public void test15() {
+    Jfie jfie = jfie(StringWrapper.class, "abc");
+    StringWrapper x = jfie.get(StringWrapper.class);
+    assertNotNull(x);
+    assertEquals(x.x, "abc");
+  }
+
+  @Test
+  public void test16() {
+    Jfie jfie = jfie("42");
+    assertEquals(jfie.get(Integer.class), Integer.valueOf(42));
+  }
+
+  @Test
+  public void test17() {
+    Jfie jfie = jfie(DoubleStringWrapper.class, "xyz");
+    DoubleStringWrapper a = jfie.get(DoubleStringWrapper.class);
+    DoubleStringWrapper b = jfie.get(DoubleStringWrapper.class);
+    assertNotSame(a, b);
+    assertEquals(a.x, "xyz");
+    assertEquals(a.y, "xyz");
+    assertEquals(b.x, "xyz");
+    assertEquals(b.y, "xyz");
+  }
+
+  @Test
+  public void test18() {
+    Jfie jfie = jfie(DoubleStringWrapper.class, "xyz").memoize();
+    DoubleStringWrapper a = jfie.get(DoubleStringWrapper.class);
+    DoubleStringWrapper b = jfie.get(DoubleStringWrapper.class);
+    assertSame(a, b);
+    assertEquals(a.x, "xyz");
+    assertEquals(a.y, "xyz");
+    assertEquals(b.x, "xyz");
+    assertEquals(b.y, "xyz");
+  }
+
+  @Test(expectedExceptions = JfieException.class)
+  public void test19() {
+    Jfie jfie = jfie(A.class, B.class);
+    jfie.get(A.class);
+  }
+
+  static class A {
+    private B b;
+    public A (B b) {
+      this.b = b;
+    }
+  }
+  static class B {
+    private A a;
+    public B(A a) {
+      this.a = a;
+    }
+  }
+
+  static class StringWrapper {
+    private String x;
+    public StringWrapper(String x) {
+      this.x = x;
+    }
+  }
+
+  static class DoubleStringWrapper {
+    private String x, y;
+    public DoubleStringWrapper(String x, String y) {
+      this.x = x;
+      this.y = y;
+    }
   }
 
 }

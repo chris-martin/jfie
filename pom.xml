@@ -14,7 +14,6 @@
   <description>
     A straightforward non-invasive dependency injection tool.
     Not a framework. Wires up whatever the hell you want.
-    Even circular dependencies are no fucking problem (usually).
     No annotations, no XML. Just give JFIE the classes and objects
     you want to use, and JFIE will perform all the god damn
     instantiation and property-setting that is possible.
