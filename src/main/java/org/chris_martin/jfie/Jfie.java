@@ -91,13 +91,13 @@ public final class Jfie {
 
     List<Problem> log = new ArrayList<Problem>();
 
-    Ref<T> match;
+    Ref<? extends T> match;
     {
 
-      Set<Ref<T>> matches;
+      Set<Ref<? extends T>> matches;
       {
-        JfieReport<Set<Ref>> matchesReport = findAllMatches(soughtType, trace);
-        matches = (Set) matchesReport.result;
+        JfieReport<Set<Ref<? extends T>>> matchesReport = findAllMatches(soughtType, trace);
+        matches = matchesReport.result;
         log.addAll(matchesReport.exceptions);
       }
 
@@ -127,14 +127,14 @@ public final class Jfie {
       }
     }
 
-    JfieReport<? extends T> x = instantiate(match.type(), trace);
+    JfieReport<? extends T> x = instantiate((Class<? extends T>) match.type(), trace);
     log.addAll(x.exceptions);
     return newReport(x.result, log);
   }
 
-  private JfieReport<Set<Ref>> findAllMatches(Class soughtType, ConstructorList trace) {
+  private <T> JfieReport<Set<Ref<? extends T>>> findAllMatches(Class<T> soughtType, ConstructorList trace) {
 
-    Set<Ref> matches = new HashSet<Ref>();
+    Set<Ref<? extends T>> matches = new HashSet<Ref<? extends T>>();
 
     matches.add(ref(soughtType));
 
@@ -144,7 +144,7 @@ public final class Jfie {
       Class type = ref.type();
       if (ref.isType()) {
         if (type != soughtType && soughtType.isAssignableFrom(type)) {
-          JfieReport<Object> report = _get(type, trace);
+          JfieReport<T> report = _get(type, trace);
           matches.add(ref(report.result));
           log.addAll(report.exceptions);
         }
@@ -156,7 +156,7 @@ public final class Jfie {
     }
 
     for (Jfie jfie : jfies) {
-      JfieReport<Object> report = jfie._get(soughtType, trace);
+      JfieReport<T> report = jfie._get(soughtType, trace);
       matches.add(ref(report.result));
       log.addAll(report.exceptions);
     }
