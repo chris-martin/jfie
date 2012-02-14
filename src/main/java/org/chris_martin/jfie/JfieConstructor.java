@@ -6,23 +6,23 @@ import java.util.*;
 
 import static org.chris_martin.jfie.JfieException.ConstructorCycle.constructorCycle;
 
-final class JfieConstructor implements Iterable<Class> {
+final class JfieConstructor<T> implements Iterable<Class<?>> {
 
-  final Constructor constructor;
+  final Constructor<T> constructor;
 
-  private JfieConstructor(Constructor constructor) {
+  private JfieConstructor(Constructor<T> constructor) {
     this.constructor = constructor;
   }
 
-  static JfieConstructor newConstructor(Constructor constructor) {
-    return new JfieConstructor(constructor);
+  static <T> JfieConstructor<T> newConstructor(Constructor<T> constructor) {
+    return new JfieConstructor<T>(constructor);
   }
 
   int arity() {
     return constructor.getParameterTypes().length;
   }
 
-  Object newInstance(List args) {
+  T newInstance(List args) {
     try {
       return constructor.newInstance(args.toArray());
     } catch (IllegalArgumentException e) {
@@ -35,7 +35,7 @@ final class JfieConstructor implements Iterable<Class> {
   }
 
   @Override
-  public Iterator<Class> iterator() {
+  public Iterator<Class<?>> iterator() {
     return Arrays.asList(constructor.getParameterTypes()).iterator();
   }
 
@@ -67,9 +67,9 @@ final class JfieConstructor implements Iterable<Class> {
     return constructor.hashCode();
   }
 
-  static Iterable<JfieConstructor> constructorsByDescendingArity(Class type) {
-    List<JfieConstructor> constructors = new ArrayList<JfieConstructor>();
-    for (Constructor constructor : type.getConstructors())
+  static <T> Iterable<JfieConstructor<T>> constructorsByDescendingArity(Class<T> type) {
+    List<JfieConstructor<T>> constructors = new ArrayList<JfieConstructor<T>>();
+    for (Constructor<T> constructor : (Constructor<T>[]) type.getConstructors())
       constructors.add(newConstructor(constructor));
     Collections.sort(constructors, ARITY_COMPARATOR);
     return constructors;

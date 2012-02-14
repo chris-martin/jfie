@@ -1,15 +1,19 @@
 package org.chris_martin.jfie;
 
-interface Ref {
+interface Ref<T> {
 
   boolean isType();
   boolean isObject();
-  Class type();
-  Object object();
+  Class<? extends T> type();
+  T object();
 
   class Factory {
 
-    static Ref ref(Object x) {
+    static <T> Ref<T> ref(T x) {
+      return x == null ? null : new Impl(x);
+    }
+
+    static <T> Ref<T> ref(Class<T> x) {
       return x == null ? null : new Impl(x);
     }
 
