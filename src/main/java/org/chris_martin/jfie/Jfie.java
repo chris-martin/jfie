@@ -1,7 +1,9 @@
 package org.chris_martin.jfie;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.chris_martin.jfie.JfieConstructor.*;
 import static org.chris_martin.jfie.JfieException.ConstructorFailure.constructorFailure;
@@ -10,7 +12,7 @@ import static org.chris_martin.jfie.JfieException.BeMoreSpecific.beMoreSpecific;
 import static org.chris_martin.jfie.JfieException.NoOptions.noOptions;
 import static org.chris_martin.jfie.JfieException.newJfieException;
 import static org.chris_martin.jfie.JfieReport.newReport;
-import static org.chris_martin.jfie.RefSet.newRefSet;
+import static org.chris_martin.jfie.Ref.Factory.ref;
 
 /**
 
@@ -48,12 +50,10 @@ In constructors, they are absolutely <em>not</em> okay. JFIE will throw up
 if it notices even the possibility of any of that shit going on.</p>
 
  */
-@SuppressWarnings("unchecked")
 public final class Jfie {
 
-  private List<Class> types = new ArrayList();
-  private List<Jfie> jfies = new ArrayList();
-  private RefSet objects = newRefSet();
+  private List<Jfie> jfies = new ArrayList<Jfie>();
+  private Set<Ref> refs = new HashSet<Ref>();
   private boolean memoize;
 
   /**
@@ -78,18 +78,19 @@ public final class Jfie {
   }
 
   public <T> JfieReport<T> report(Class<T> soughtType) {
-    return _get(soughtType, newConstructorList());
+    JfieReport<Object> report = _get(soughtType, newConstructorList());
+    return newReport((T) report.result, report.exceptions);
   }
 
   /**
    * @param trace A stack trace of constructors used to detect constructor dependency cycles
    */
-  protected JfieReport _get(Class soughtType, ConstructorList trace) {
+  protected JfieReport<Object> _get(Class soughtType, ConstructorList trace) {
 
     List<Problem> log = new ArrayList<Problem>();
 
-    JfieReport<RefSet> matchesReport = findAllMatches(soughtType, trace);
-    RefSet matches = matchesReport.result;
+    JfieReport<Set<Ref>> matchesReport = findAllMatches(soughtType, trace);
+    Set<Ref> matches = matchesReport.result;
     log.addAll(matchesReport.exceptions);
 
     matches.removeAll(uselessMatches(matches));
@@ -104,76 +105,75 @@ public final class Jfie {
       return newReport(null, log);
     }
 
-    Object match = matches.iterator().next();
+    Ref match = matches.iterator().next();
 
-    if (!(match instanceof Class))
-      return newReport(match, log);
+    if (match.isObject())
+      return newReport(match.object(), log);
 
-    Class type = (Class) match;
-
-    Problem constructorCycle = trace.checkForCycle(type);
+    Problem constructorCycle = trace.checkForCycle(match.type());
     if (constructorCycle != null) {
       log.add(constructorCycle);
-      return newReport(match, log);
+      return newReport(null, log);
     }
 
-    JfieReport<Object> x = instantiate(type, trace);
+    JfieReport<Object> x = instantiate(match.type(), trace);
     log.addAll(x.exceptions);
     return newReport(x.result, log);
   }
 
-  private RefSet uselessMatches(RefSet matches) {
+  private static Set<Ref> uselessMatches(Set<Ref> matches) {
 
-    RefSet matchesToRemove = newRefSet();
+    Set<Ref> matchesToRemove = new HashSet<Ref>();
 
-    for (Object a : matches) {
-      Class typeA = a instanceof Class ? (Class) a : a.getClass();
+    for (Ref a : matches) {
 
-      for (Object b : matches) {
-        Class typeB = b instanceof Class ? (Class) b : b.getClass();
+      for (Ref b : matches) {
 
-        if (typeA != typeB && typeA.isAssignableFrom(typeB))
+        if (a.type() != b.type() && a.type().isAssignableFrom(b.type()))
           matchesToRemove.add(a);
-        else if (typeA != typeB && typeB.isAssignableFrom(typeA))
+        else if (a.type() != b.type() && b.type().isAssignableFrom(a.type()))
           matchesToRemove.add(b);
-        else if (typeA == typeB && (a instanceof Class != b instanceof Class))
-          matchesToRemove.add(a instanceof Class ? a : b);
+        else if (a.type() == b.type() && (a.isType() != b.isType()))
+          matchesToRemove.add(a.isType() ? a : b);
       }
     }
 
     return matchesToRemove;
   }
 
-  private JfieReport<RefSet> findAllMatches(Class soughtType, ConstructorList trace) {
+  private JfieReport<Set<Ref>> findAllMatches(Class soughtType, ConstructorList trace) {
 
-    RefSet matches = newRefSet();
+    Set<Ref> matches = new HashSet<Ref>();
 
-    matches.add(soughtType);
+    matches.add(ref(soughtType));
 
     List<Problem> log = new ArrayList<Problem>();
 
-    for (Class type : types)
-      if (type != soughtType && soughtType.isAssignableFrom(type)) {
-        JfieReport report = _get(type, trace);
-        matches.add(report.result);
-        log.addAll(report.exceptions);
+    for (Ref ref : refs) {
+      Class type = ref.type();
+      if (ref.isType()) {
+        if (type != soughtType && soughtType.isAssignableFrom(type)) {
+          JfieReport<Object> report = _get(type, trace);
+          matches.add(ref(report.result));
+          log.addAll(report.exceptions);
+        }
+      } else {
+        if (soughtType.isAssignableFrom(ref.type())) {
+          matches.add(ref);
+        }
       }
-
-    for (Object o : objects)
-      if (soughtType.isAssignableFrom(o.getClass()))
-        if (!matches.contains(o))
-          matches.add(o);
+    }
 
     for (Jfie jfie : jfies) {
-      JfieReport report = jfie._get(soughtType, trace);
-      matches.add(report.result);
+      JfieReport<Object> report = jfie._get(soughtType, trace);
+      matches.add(ref(report.result));
       log.addAll(report.exceptions);
     }
 
     return JfieReport.newReport(matches, log);
   }
 
-  private JfieReport instantiate(Class type, ConstructorList trace) {
+  private JfieReport<Object> instantiate(Class type, ConstructorList trace) {
 
     Object x = null;
 
@@ -184,15 +184,17 @@ public final class Jfie {
       ConstructorList trace2 = trace.copy();
       trace2.add(constructor);
 
-      List instances = new ArrayList();
+      List<Object> instances = new ArrayList<Object>();
       for (Class arg : constructor) {
-        JfieReport instance = _get(arg, trace2);
+
+        JfieReport<Object> instance = _get(arg, trace2);
         log.addAll(instance.exceptions);
-        if (instance.result != null) {
+
+        if (instance.result != null)
           instances.add(instance.result);
-        } else {
+        else
           continue constructors;
-        }
+
       }
       x = constructor.newInstance(instances);
       if (x == null) {
@@ -203,13 +205,13 @@ public final class Jfie {
 
     }
 
-    if (memoize && x != null)
-      objects.add(x);
+    if (memoize && x != null) {
+      refs.remove(ref(x.getClass()));
+      refs.add(ref(x));
+    }
 
     return newReport(x, log);
   }
-
-
 
   /**
    * Creates a jfie, based on this one, which memoizes calls to {@link #get(Class)}.
@@ -218,9 +220,8 @@ public final class Jfie {
    */
   public Jfie memoize() {
     Jfie x = new Jfie();
-    x.types.addAll(types);
     x.jfies.addAll(jfies);
-    x.objects.addAll(objects);
+    x.refs.addAll(refs);
     x.memoize = true;
     return x;
   }
@@ -233,10 +234,8 @@ public final class Jfie {
 
       if (arg instanceof Jfie)
         jfies.add((Jfie) arg);
-      else if (arg instanceof Class)
-        types.add((Class) arg);
       else
-        objects.add(arg);
+        refs.add(ref(arg));
 
     }
   }

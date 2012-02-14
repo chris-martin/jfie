@@ -28,7 +28,7 @@ public class JfieTest {
   @Test(expectedExceptions = JfieException.class)
   public void test3() {
     Jfie jfie = jfie("abc");
-    jfie.get(Integer.class);
+    assertNull(jfie.get(Integer.class));
   }
 
   @Test
@@ -60,13 +60,13 @@ public class JfieTest {
   @Test(expectedExceptions = JfieException.class)
   public void test8() {
     Jfie jfie = jfie("abc", "def");
-    jfie.get(Object.class);
+    assertNull(jfie.get(Object.class));
   }
 
   @Test(expectedExceptions = JfieException.class)
   public void test9() {
     Jfie jfie = jfie("abc", "def");
-    jfie.get(String.class);
+    assertNull(jfie.get(String.class));
   }
 
   @Test
@@ -143,7 +143,7 @@ public class JfieTest {
   @Test(expectedExceptions = JfieException.class)
   public void test19() {
     Jfie jfie = jfie(A.class, B.class);
-    jfie.get(A.class);
+    assertNull(jfie.get(A.class));
   }
 
   static class A {
