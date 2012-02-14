@@ -5,11 +5,14 @@ import java.util.Set;
 
 class PartialOrder<Node> {
 
-  Set<Node> lowest(Set<? extends Node> universe) {
+  /**
+   * {{@code x} ∈ {@code u} : ∄ {@code y} ∈ {@code u} : {@code x} &gt; {@code y} }
+   */
+  Set<Node> lowest(Set<? extends Node> u) {
 
     Set<Node> bad = new HashSet<Node>();
 
-    for (Node a : universe) for (Node b : universe) {
+    for (Node a : u) for (Node b : u) {
 
       Relation relation = definition.relation(a, b);
 
@@ -18,7 +21,7 @@ class PartialOrder<Node> {
 
     }
 
-    Set<Node> lowest = new HashSet<Node>(universe);
+    Set<Node> lowest = new HashSet<Node>(u);
     lowest.removeAll(bad);
     return lowest;
   }
