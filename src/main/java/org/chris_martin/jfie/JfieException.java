@@ -1,6 +1,5 @@
 package org.chris_martin.jfie;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,30 +79,30 @@ public final class JfieException extends RuntimeException {
 
   }
 
-  public static final class ConstructorCycle extends Problem {
+  public static final class FactoryCycle extends Problem {
 
-    private final List<Constructor> constructors = new ArrayList<Constructor>();
+    private final List<Factory> factories = new ArrayList<Factory>();
 
-    private ConstructorCycle(List<Constructor> constructors) {
-      this.constructors.addAll(constructors);
+    private FactoryCycle(List<Factory> factories) {
+      this.factories.addAll(factories);
     }
 
-    static ConstructorCycle constructorCycle(List<Constructor> constructors) {
-      return new ConstructorCycle(constructors);
+    static FactoryCycle factoryCycle(List<Factory> factories) {
+      return new FactoryCycle(factories);
     }
 
   }
 
-  public static final class ConstructorFailure extends Problem {
+  public static final class FactoryFailure extends Problem {
 
-    private final Constructor constructor;
+    private final Factory factory;
 
-    private ConstructorFailure(Constructor constructor) {
-      this.constructor = constructor;
+    private FactoryFailure(Factory factory) {
+      this.factory = factory;
     }
 
-    static ConstructorFailure constructorFailure(Constructor constructor) {
-      return new ConstructorFailure(constructor);
+    static FactoryFailure factoryFailure(Factory factory) {
+      return new FactoryFailure(factory);
     }
 
   }

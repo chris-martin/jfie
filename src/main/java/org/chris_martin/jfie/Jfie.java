@@ -5,9 +5,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.chris_martin.jfie.JfieConstructor.*;
+import static org.chris_martin.jfie.Factories.constructorFactoriesByDescendingArity;
+import static org.chris_martin.jfie.FactoryLists.factoryList;
 import static org.chris_martin.jfie.JfieException.BeMoreSpecific.beMoreSpecific;
-import static org.chris_martin.jfie.JfieException.ConstructorFailure.constructorFailure;
+import static org.chris_martin.jfie.JfieException.FactoryFailure.factoryFailure;
 import static org.chris_martin.jfie.JfieException.NoOptions.noOptions;
 import static org.chris_martin.jfie.JfieException.Problem;
 import static org.chris_martin.jfie.JfieException.newJfieException;
@@ -80,14 +81,14 @@ public final class Jfie {
   }
 
   public <T> JfieReport<T> report(Class<T> soughtType) {
-    JfieReport<T> report = _get(soughtType, newConstructorList());
+    JfieReport<T> report = _get(soughtType, factoryList());
     return newReport(report.result, report.exceptions);
   }
 
   /**
    * @param trace A stack trace of constructors used to detect constructor dependency cycles
    */
-  protected <T> JfieReport<T> _get(Class<T> soughtType, ConstructorList trace) {
+  protected <T> JfieReport<T> _get(Class<T> soughtType, FactoryList trace) {
 
     List<Problem> log = new ArrayList<Problem>();
 
@@ -132,7 +133,7 @@ public final class Jfie {
     return newReport(x.result, log);
   }
 
-  private <T> JfieReport<Set<Ref<? extends T>>> findAllMatches(Class<T> soughtType, ConstructorList trace) {
+  private <T> JfieReport<Set<Ref<? extends T>>> findAllMatches(Class<T> soughtType, FactoryList trace) {
 
     Set<Ref<? extends T>> matches = new HashSet<Ref<? extends T>>();
 
@@ -164,19 +165,18 @@ public final class Jfie {
     return JfieReport.newReport(matches, log);
   }
 
-  private <T> JfieReport<T> instantiate(Class<T> type, ConstructorList trace) {
+  private <T> JfieReport<T> instantiate(Class<T> type, FactoryList trace) {
 
     T x = null;
 
     List<Problem> log = new ArrayList<Problem>();
 
-    constructors: for (JfieConstructor<T> constructor : constructorsByDescendingArity(type)) {
+    constructors: for (Factory<T> factory : constructorFactoriesByDescendingArity(type)) {
 
-      ConstructorList trace2 = trace.copy();
-      trace2.add(constructor);
+      FactoryList trace2 = trace.add(factory);
 
       List<Object> instances = new ArrayList<Object>();
-      for (Class arg : constructor) {
+      for (Class arg : factory.parameterTypes()) {
 
         JfieReport instance = _get(arg, trace2);
         log.addAll(instance.exceptions);
@@ -187,9 +187,9 @@ public final class Jfie {
           continue constructors;
 
       }
-      x = constructor.newInstance(instances);
+      x = factory.newInstance(instances);
       if (x == null) {
-        log.add(constructorFailure(constructor.constructor));
+        log.add(factoryFailure(factory));
         continue constructors;
       }
       break;
