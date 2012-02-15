@@ -1,6 +1,6 @@
 package org.chris_martin.jfie;
 
-import static org.chris_martin.jfie.PartialOrder.*;
+import static org.chris_martin.jfie.PartialOrder.Relation;
 import static org.chris_martin.jfie.PartialOrder.Relation.*;
 
 class RefHierarchy implements PartialOrder.ComparisonDefinition<Ref> {

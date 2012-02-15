@@ -39,43 +39,46 @@ interface PartialOrder<Node> {
 
   }
 
-  final class Factory {
+}
 
-    private Factory() { }
+final class PartialOrders {
 
-    static <Node> PartialOrder<Node> partialOrder(ComparisonDefinition<Node> definition) {
-      return new ComparisonImpl<Node>(definition);
+  private PartialOrders() { }
+
+  static <Node> PartialOrder<Node> partialOrder(
+      PartialOrder.ComparisonDefinition<Node> definition) {
+
+    return new ComparisonImpl<Node>(definition);
+  }
+
+  private static class ComparisonImpl<Node> implements PartialOrder<Node> {
+
+    @Override
+    public Set<Node> lowest(Set<? extends Node> u) {
+
+      Set<Node> bad = new HashSet<Node>();
+
+      for (Node a : u) for (Node b : u) {
+
+        Relation relation = definition.relation(a, b);
+
+        if (relation != Relation.UNDEFINED)
+          bad.add(relation == Relation.HIGHER ? a : b);
+
+      }
+
+      Set<Node> lowest = new HashSet<Node>(u);
+      lowest.removeAll(bad);
+      return lowest;
     }
 
-    private static class ComparisonImpl<Node> implements PartialOrder<Node> {
+    private final ComparisonDefinition<Node> definition;
 
-      @Override
-      public Set<Node> lowest(Set<? extends Node> u) {
-
-        Set<Node> bad = new HashSet<Node>();
-
-        for (Node a : u) for (Node b : u) {
-
-          Relation relation = definition.relation(a, b);
-
-          if (relation != Relation.UNDEFINED)
-            bad.add(relation == Relation.HIGHER ? a : b);
-
-        }
-
-        Set<Node> lowest = new HashSet<Node>(u);
-        lowest.removeAll(bad);
-        return lowest;
-      }
-
-      private final ComparisonDefinition<Node> definition;
-
-      private ComparisonImpl(ComparisonDefinition<Node> definition) {
-        this.definition = definition;
-      }
-
+    private ComparisonImpl(ComparisonDefinition<Node> definition) {
+      this.definition = definition;
     }
 
   }
 
 }
+

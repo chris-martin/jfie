@@ -6,15 +6,15 @@ import java.util.List;
 import java.util.Set;
 
 import static org.chris_martin.jfie.JfieConstructor.*;
-import static org.chris_martin.jfie.JfieException.ConstructorFailure.constructorFailure;
-import static org.chris_martin.jfie.JfieException.Problem;
 import static org.chris_martin.jfie.JfieException.BeMoreSpecific.beMoreSpecific;
+import static org.chris_martin.jfie.JfieException.ConstructorFailure.constructorFailure;
 import static org.chris_martin.jfie.JfieException.NoOptions.noOptions;
+import static org.chris_martin.jfie.JfieException.Problem;
 import static org.chris_martin.jfie.JfieException.newJfieException;
 import static org.chris_martin.jfie.JfieReport.newReport;
-import static org.chris_martin.jfie.PartialOrder.Factory.partialOrder;
-import static org.chris_martin.jfie.Ref.Factory.ref;
+import static org.chris_martin.jfie.PartialOrders.partialOrder;
 import static org.chris_martin.jfie.RefHierarchy.refHierarchy;
+import static org.chris_martin.jfie.Refs.ref;
 
 /**
 
