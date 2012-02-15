@@ -3,7 +3,7 @@ package org.chris_martin.jfie;
 import static org.chris_martin.jfie.PartialOrder.*;
 import static org.chris_martin.jfie.PartialOrder.Relation.*;
 
-class RefHierarchy implements Definition<Ref> {
+class RefHierarchy implements PartialOrder.ComparisonDefinition<Ref> {
 
   private static final RefHierarchy INSTANCE = new RefHierarchy();
 

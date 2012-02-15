@@ -7,7 +7,9 @@ interface Ref<T> {
   Class<? extends T> type();
   T object();
 
-  class Factory {
+  final class Factory {
+
+    private Factory() { }
 
     static <T> Ref<T> ref(T x) {
       return x == null ? null : new Impl(x);
