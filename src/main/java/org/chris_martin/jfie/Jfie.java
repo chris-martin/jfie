@@ -15,7 +15,7 @@ import static org.chris_martin.jfie.JfieException.newJfieException;
 import static org.chris_martin.jfie.JfieReport.newReport;
 import static org.chris_martin.jfie.PartialOrders.partialOrder;
 import static org.chris_martin.jfie.RefHierarchy.refHierarchy;
-import static org.chris_martin.jfie.Refs.ref;
+import static org.chris_martin.jfie.Refs.*;
 
 /**
 
@@ -113,12 +113,12 @@ public final class Jfie {
 
     List<Problem> log = new ArrayList<Problem>();
 
-    Ref<? extends T> match;
+    Ref<T> match;
     {
 
-      Set<Ref<? extends T>> matches;
+      Set<Ref<T>> matches;
       {
-        JfieReport<Set<Ref<? extends T>>> matchesReport = findAllMatches(soughtType, trace);
+        JfieReport<Set<Ref<T>>> matchesReport = findAllMatches(soughtType, trace);
         matches = matchesReport.result;
         log.addAll(matchesReport.exceptions);
       }
@@ -154,11 +154,11 @@ public final class Jfie {
     return newReport(x.result, log);
   }
 
-  private <T> JfieReport<Set<Ref<? extends T>>> findAllMatches(Class<T> soughtType, FactoryList trace) {
+  private <T> JfieReport<Set<Ref<T>>> findAllMatches(Class<T> soughtType, FactoryList trace) {
 
-    Set<Ref<? extends T>> matches = new HashSet<Ref<? extends T>>();
+    Set<Ref<T>> matches = new HashSet<Ref<T>>();
 
-    matches.add(ref(soughtType));
+    matches.add(typeRef(soughtType));
 
     List<Problem> log = new ArrayList<Problem>();
 
@@ -167,7 +167,7 @@ public final class Jfie {
       if (ref.isType()) {
         if (type != soughtType && soughtType.isAssignableFrom(type)) {
           JfieReport<T> report = _get(type, trace);
-          matches.add(ref(report.result));
+          matches.add(objectRef(report.result));
           log.addAll(report.exceptions);
         }
       } else {
@@ -179,7 +179,7 @@ public final class Jfie {
 
     for (Jfie jfie : jfies) {
       JfieReport<T> report = jfie._get(soughtType, trace);
-      matches.add(ref(report.result));
+      matches.add(objectRef(report.result));
       log.addAll(report.exceptions);
     }
 
@@ -224,8 +224,8 @@ public final class Jfie {
 
   private void instantiated(Object x) {
     if (memoize && x != null) {
-      refs.remove(ref(x.getClass()));
-      refs.add(ref(x));
+      refs.remove(typeRef(x.getClass()));
+      refs.add(objectRef(x));
     }
   }
 

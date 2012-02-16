@@ -10,8 +10,12 @@ public final class JfieException extends RuntimeException {
   private JfieException() { }
 
   static JfieException newJfieException(Iterable<Problem> exceptions) {
+
     JfieException x = new JfieException();
-    for (Problem e : exceptions) x.exceptions.add(e);
+
+    for (Problem e : exceptions)
+      x.exceptions.add(e);
+
     throw x;
   }
 
@@ -23,9 +27,14 @@ public final class JfieException extends RuntimeException {
 
   @Override
   public String toString() {
+
     StringBuilder x = new StringBuilder();
+
     x.append("JfieException:\n");
-    for (Problem e : exceptions) x.append(e);
+
+    for (Problem e : exceptions)
+      x.append(e);
+
     return x.toString();
   }
 
@@ -53,27 +62,33 @@ public final class JfieException extends RuntimeException {
   public static final class BeMoreSpecific extends Problem {
 
     private final Class type;
-    private final List possibilities;
+    private final List<Ref> possibilities;
 
-    private BeMoreSpecific(Class type, List possibilities) {
+    private BeMoreSpecific(Class type, List<Ref> possibilities) {
       this.type = type;
       this.possibilities = possibilities;
     }
 
-    static BeMoreSpecific beMoreSpecific(Class type, Iterable possibilities) {
-      List list = new ArrayList();
-      for (Object o : possibilities) list.add(o);
+    static BeMoreSpecific beMoreSpecific(Class type, Iterable<? extends Ref> possibilities) {
+
+      List<Ref> list = new ArrayList<Ref>();
+
+      for (Ref ref : possibilities)
+        list.add(ref);
+
       return new BeMoreSpecific(type, list);
     }
 
     @Override
     public String toString() {
+
       StringBuilder x = new StringBuilder();
+
       x.append("Too many options for ").append(type.getName()).append(":");
-      for (Object o : possibilities) {
-        Class type = o instanceof Class ? (Class) o : o.getClass();
-        x.append("\n  ").append(type.getName());
-      }
+
+      for (Ref ref : possibilities)
+        x.append("\n  ").append(ref.describe());
+
       return x.toString();
     }
 
