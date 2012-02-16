@@ -55,15 +55,29 @@ if it notices even the possibility of any of that shit going on.</p>
  */
 public final class Jfie {
 
-  private List<Jfie> jfies = new ArrayList<Jfie>();
-  private Set<Ref> refs = new HashSet<Ref>();
+  private final List<Jfie> jfies = new ArrayList<Jfie>();
+  private final Set<Ref> refs = new HashSet<Ref>();
   private boolean memoize;
+
+  private Jfie() { }
 
   /**
    * @throws NullPointerException If any of the {@code args} are null.
    */
   public static Jfie jfie(Object ... args) {
-    return new Jfie(args);
+    Jfie x = new Jfie();
+    for (Object arg : args) {
+
+      if (arg == null)
+        throw new NullPointerException();
+
+      if (arg instanceof Jfie)
+        x.jfies.add((Jfie) arg);
+      else
+        x.refs.add(ref(arg));
+
+    }
+    return x;
   }
 
   /**
@@ -73,10 +87,15 @@ public final class Jfie {
    * @throws NullPointerException If {@code soughtType} is null.
    */
   public <T> T get(Class<T> soughtType) {
-    if (soughtType == null) throw new NullPointerException();
+
+    if (soughtType == null)
+      throw new NullPointerException();
+
     JfieReport<T> report = report(soughtType);
+
     if (report.result == null)
       throw newJfieException(report.exceptions);
+
     return report.result;
   }
 
@@ -215,20 +234,6 @@ public final class Jfie {
     x.refs.addAll(refs);
     x.memoize = true;
     return x;
-  }
-
-  protected Jfie(Object ... args) {
-    for (Object arg : args) {
-
-      if (arg == null)
-        throw new NullPointerException();
-
-      if (arg instanceof Jfie)
-        jfies.add((Jfie) arg);
-      else
-        refs.add(ref(arg));
-
-    }
   }
 
 }
