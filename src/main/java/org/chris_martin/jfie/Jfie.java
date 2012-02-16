@@ -66,18 +66,20 @@ public final class Jfie {
    */
   public static Jfie jfie(Object ... args) {
     Jfie x = new Jfie();
-    for (Object arg : args) {
-
-      if (arg == null)
-        throw new NullPointerException();
-
-      if (arg instanceof Jfie)
-        x.jfies.add((Jfie) arg);
-      else
-        x.refs.add(ref(arg));
-
-    }
+    for (Object arg : args) x.addArg(arg);
     return x;
+  }
+
+  private void addArg(Object arg) {
+
+    if (arg == null)
+      throw new NullPointerException();
+
+    if (arg instanceof Jfie)
+      jfies.add((Jfie) arg);
+    else
+      refs.add(ref(arg));
+
   }
 
   /**
@@ -215,12 +217,16 @@ public final class Jfie {
 
     }
 
+    instantiated(x);
+
+    return newReport(x, log);
+  }
+
+  private void instantiated(Object x) {
     if (memoize && x != null) {
       refs.remove(ref(x.getClass()));
       refs.add(ref(x));
     }
-
-    return newReport(x, log);
   }
 
   /**
