@@ -146,6 +146,48 @@ public class JfieTest {
     assertNull(jfie.get(A.class));
   }
 
+  @Test
+  public void test20() {
+    Jfie jfie = jfie(X.class, Y.class);
+    IZ z = jfie.get(IZ.class);
+    assertNotNull(z);
+    assertEquals(z.x(), "xxx");
+    assertEquals(z.y(), "yyy");
+  }
+
+  @Test
+  public void test21() {
+    Jfie jfie = jfie(T.class);
+    S s = jfie.get(S.class);
+    assertNotNull(s);
+    assertEquals(s.r(), ";p;");
+  }
+
+  static interface R { String r(); }
+  static interface S extends R { }
+  static class T implements R {
+    @Override
+    public String r() {
+      return ";p;";
+    }
+  }
+
+  static interface IX { String x(); }
+  static interface IY { String y(); }
+  static interface IZ extends IX, IY { }
+  static class X implements IX {
+    @Override
+    public String x() {
+      return "xxx";
+    }
+  }
+  static class Y implements IY {
+    @Override
+    public String y() {
+      return "yyy";
+    }
+  }
+
   static class A {
     private B b;
     public A (B b) {
