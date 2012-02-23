@@ -163,9 +163,19 @@ public class JfieTest {
     assertEquals(s.r(), ";p;");
   }
 
+  @Test
+  public void test22() {
+    Jfie jfie = jfie(T.class);
+    S2 s = jfie.get(S2.class);
+    assertNotNull(s);
+    assertEquals(s.r(), ";p;");
+  }
+
   static interface R { String r(); }
   static interface S extends R { }
+  static interface S2 extends R { String r(); }
   static class T implements R {
+    public T() { }
     @Override
     public String r() {
       return ";p;";
@@ -176,12 +186,14 @@ public class JfieTest {
   static interface IY { String y(); }
   static interface IZ extends IX, IY { }
   static class X implements IX {
+    public X() { }
     @Override
     public String x() {
       return "xxx";
     }
   }
   static class Y implements IY {
+    public Y() { }
     @Override
     public String y() {
       return "yyy";
@@ -190,7 +202,7 @@ public class JfieTest {
 
   static class A {
     private B b;
-    public A (B b) {
+    public A(B b) {
       this.b = b;
     }
   }

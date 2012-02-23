@@ -22,12 +22,27 @@ final class Factories {
     return new ConstructorFactory<T>(constructor);
   }
 
-  static <T> Iterable<? extends Factory<T>>
+  static <T> List<? extends Factory<T>>
       constructorFactoriesByDescendingArity(Class<T> type) {
 
+    boolean explicitNullaryConstructor = false;
+
     List<Constructor<T>> constructors = new ArrayList<Constructor<T>>();
-    for (Constructor constructor : type.getConstructors())
+    for (Constructor constructor : type.getConstructors()) {
+
       constructors.add(constructor);
+
+      if (constructor.getParameterTypes().length == 0)
+        explicitNullaryConstructor = true;
+
+    }
+
+    if (!explicitNullaryConstructor) {
+      try {
+        Constructor constructor = type.getConstructor();
+        constructors.add(constructor);
+      } catch (NoSuchMethodException e) { }
+    }
 
     Collections.sort(constructors, new Comparator<Constructor>() {
 

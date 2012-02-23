@@ -12,7 +12,6 @@ public final class JfieException extends RuntimeException {
   static JfieException newJfieException(Iterable<Problem> exceptions) {
 
     JfieException x = new JfieException();
-
     for (Problem e : exceptions)
       x.exceptions.add(e);
 
@@ -26,16 +25,21 @@ public final class JfieException extends RuntimeException {
   }
 
   @Override
-  public String toString() {
+  public String getMessage() {
 
     StringBuilder x = new StringBuilder();
 
-    x.append("JfieException:\n");
-
     for (Problem e : exceptions)
-      x.append(e);
+      x.append(e).append("\n");
+
+    x.setLength(x.length() - 1);
 
     return x.toString();
+  }
+
+  @Override
+  public String toString() {
+    return "JfieException:\n" + getMessage();
   }
 
   static class Problem { }
@@ -103,7 +107,22 @@ public final class JfieException extends RuntimeException {
     }
 
     static FactoryCycle factoryCycle(List<Factory> factories) {
+
+      if (factories.size() == 0)
+        throw new NullPointerException();
+
       return new FactoryCycle(factories);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder x = new StringBuilder();
+      x.append("Factory cycle: ");
+      for (Factory factory : factories) {
+        x.append(factory).append(", ");
+      }
+      x.setLength(x.length() - 2);
+      return x.toString();
     }
 
   }
@@ -118,6 +137,30 @@ public final class JfieException extends RuntimeException {
 
     static FactoryFailure factoryFailure(Factory factory) {
       return new FactoryFailure(factory);
+    }
+
+    @Override
+    public String toString() {
+      return "Factory failure: " + factory;
+    }
+
+  }
+
+  public static final class NoFactories extends Problem {
+
+    private Class type;
+
+    private NoFactories(Class type) {
+      this.type = type;
+    }
+
+    static NoFactories noFactories(Class type) {
+      return new NoFactories(type);
+    }
+
+    @Override
+    public String toString() {
+      return "No factories: " + type.getName();
     }
 
   }

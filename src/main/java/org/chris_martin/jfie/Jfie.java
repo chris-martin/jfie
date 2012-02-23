@@ -1,20 +1,22 @@
 package org.chris_martin.jfie;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.*;
 
 import static org.chris_martin.jfie.Factories.constructorFactoriesByDescendingArity;
 import static org.chris_martin.jfie.FactoryLists.factoryList;
 import static org.chris_martin.jfie.JfieException.BeMoreSpecific.beMoreSpecific;
 import static org.chris_martin.jfie.JfieException.FactoryFailure.factoryFailure;
-import static org.chris_martin.jfie.JfieException.NoOptions.noOptions;
+import static org.chris_martin.jfie.JfieException.NoFactories.noFactories;
 import static org.chris_martin.jfie.JfieException.Problem;
 import static org.chris_martin.jfie.JfieException.newJfieException;
 import static org.chris_martin.jfie.JfieReport.newReport;
-import static org.chris_martin.jfie.PartialOrders.partialOrder;
-import static org.chris_martin.jfie.RefHierarchy.refHierarchy;
+import static org.chris_martin.jfie.JfieReport.nullReport;
+import static org.chris_martin.jfie.PartialOrders.refHierarchyPartialOrder;
+import static org.chris_martin.jfie.PartialOrders.typeHierarchyPartialOrder;
 import static org.chris_martin.jfie.Refs.*;
 
 /**
@@ -95,15 +97,19 @@ public final class Jfie {
 
     JfieReport<T> report = report(soughtType);
 
-    if (report.result == null)
-      throw newJfieException(report.exceptions);
+    if (report.result == null) {
+
+      if (report.problems.size() == 0)
+        throw new AssertionError();
+
+      throw newJfieException(report.problems);
+    }
 
     return report.result;
   }
 
   public <T> JfieReport<T> report(Class<T> soughtType) {
-    JfieReport<T> report = _get(soughtType, factoryList());
-    return newReport(report.result, report.exceptions);
+    return _get(soughtType, factoryList());
   }
 
   /**
@@ -120,19 +126,17 @@ public final class Jfie {
       {
         JfieReport<Set<Ref<T>>> matchesReport = findAllMatches(soughtType, trace);
         matches = matchesReport.result;
-        log.addAll(matchesReport.exceptions);
+        log.addAll(matchesReport.problems);
       }
 
-      matches = (Set) partialOrder(refHierarchy()).lowest(matches);
+      matches = (Set) refHierarchyPartialOrder().lowest(matches);
 
-      if (matches.size() == 0) {
-        log.add(noOptions(soughtType));
-        return newReport(null, log);
-      }
+      if (matches.size() == 0)
+        throw new AssertionError();
 
       if (matches.size() > 1) {
         log.add(beMoreSpecific(soughtType, matches));
-        return newReport(null, log);
+        return nullReport(log);
       }
 
       match = matches.iterator().next();
@@ -141,17 +145,129 @@ public final class Jfie {
     if (match.isObject())
       return newReport(match.object(), log);
 
+    if (match.type().isInterface()) {
+
+      JfieReport<T> magic = magic(soughtType, trace);
+      log.addAll(magic.problems);
+
+      if (magic.result != null)
+        return newReport(magic.result, log);
+
+    }
+
     {
       Problem constructorCycle = trace.checkForCycle(match.type());
       if (constructorCycle != null) {
         log.add(constructorCycle);
-        return newReport(null, log);
+        return nullReport(log);
       }
     }
 
     JfieReport<? extends T> x = instantiate((Class<? extends T>) match.type(), trace);
-    log.addAll(x.exceptions);
+    log.addAll(x.problems);
     return newReport(x.result, log);
+  }
+
+  private <T> JfieReport<T> magic(Class<T> soughtType, FactoryList trace) {
+
+    Set<Class> parentTypes = typeHierarchyPartialOrder().lowest(
+      new HashSet<Class>(Arrays.asList(soughtType.getInterfaces())));
+
+    List<Problem> log = new ArrayList<Problem>();
+
+    List<Object> instances = new ArrayList<Object>();
+    for (Class parentType : parentTypes) {
+      JfieReport parent = _get(parentType, trace);
+      log.addAll(parent.problems);
+
+      if (parent.result == null)
+        return nullReport(log);
+
+      instances.add(parent.result);
+    }
+
+    final Map<Method, ObjectMethod> handlers = new HashMap<Method, ObjectMethod>();
+    for (Method method : soughtType.getMethods()) {
+
+      List<ObjectMethod> matches = findEquivalentMethods(instances, method);
+
+      if (matches.size() != 1)
+        return nullReport(log);
+
+      handlers.put(method, matches.get(0));
+
+    }
+
+    InvocationHandler invocationHandler = new InvocationHandler() {
+      @Override
+      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        return handlers.get(method).invoke(args);
+      }
+    };
+
+    ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+
+    T proxy = (T) Proxy.newProxyInstance(
+      classLoader, new Class[]{ soughtType }, invocationHandler);
+
+    return newReport(proxy, log);
+  }
+
+  private static class ObjectMethod {
+
+    final Object object;
+    final Method method;
+
+    private ObjectMethod(Object object, Method method) {
+      this.object = object;
+      this.method = method;
+    }
+
+    Object invoke(Object ... args) throws InvocationTargetException, IllegalAccessException {
+      return method.invoke(object, args);
+    }
+
+  }
+
+  private List<ObjectMethod> findEquivalentMethods(Iterable<Object> objects, Method method) {
+    List<ObjectMethod> equivalentMethods = new ArrayList<ObjectMethod>();
+    for (Object object : objects) {
+      Method equivalentMethod = findEquivalentMethod(object.getClass(), method);
+      if (equivalentMethod != null) {
+        equivalentMethods.add(new ObjectMethod(object, equivalentMethod));
+      }
+    }
+    return equivalentMethods;
+  }
+
+  private Method findEquivalentMethod(Class type, Method method) {
+
+    for (Method x : type.getMethods())
+      if (methodEquality(method, x))
+        return x;
+
+    return null;
+  }
+
+  private static boolean methodEquality(Method a, Method b) {
+
+    if (!a.getName().equals(b.getName()))
+      return false;
+
+    if (!a.getReturnType().equals(b.getReturnType()))
+      return false;
+
+    Class<?>[] params1 = a.getParameterTypes();
+    Class<?>[] params2 = b.getParameterTypes();
+
+    if (params1.length != params2.length)
+      return false;
+
+    for (int i = 0; i < params1.length; i++)
+      if (params1[i] != params2[i])
+        return false;
+
+    return true;
   }
 
   private <T> JfieReport<Set<Ref<T>>> findAllMatches(Class<T> soughtType, FactoryList trace) {
@@ -167,8 +283,11 @@ public final class Jfie {
       if (ref.isType()) {
         if (type != soughtType && soughtType.isAssignableFrom(type)) {
           JfieReport<T> report = _get(type, trace);
-          matches.add(objectRef(report.result));
-          log.addAll(report.exceptions);
+          log.addAll(report.problems);
+
+          if (report.result != null)
+            matches.add(objectRef(report.result));
+
         }
       } else {
         if (soughtType.isAssignableFrom(ref.type())) {
@@ -179,8 +298,11 @@ public final class Jfie {
 
     for (Jfie jfie : jfies) {
       JfieReport<T> report = jfie._get(soughtType, trace);
-      matches.add(objectRef(report.result));
-      log.addAll(report.exceptions);
+      log.addAll(report.problems);
+
+      if (report.result != null)
+        matches.add(objectRef(report.result));
+
     }
 
     return JfieReport.newReport(matches, log);
@@ -192,7 +314,12 @@ public final class Jfie {
 
     List<Problem> log = new ArrayList<Problem>();
 
-    constructors: for (Factory<T> factory : constructorFactoriesByDescendingArity(type)) {
+    List<? extends Factory<T>> factoryList = constructorFactoriesByDescendingArity(type);
+
+    if (factoryList.size() == 0)
+      log.add(noFactories(type));
+
+    factories: for (Factory<T> factory : factoryList) {
 
       FactoryList trace2 = trace.add(factory);
 
@@ -200,30 +327,34 @@ public final class Jfie {
       for (Class arg : factory.parameterTypes()) {
 
         JfieReport instance = _get(arg, trace2);
-        log.addAll(instance.exceptions);
+        log.addAll(instance.problems);
 
         if (instance.result != null)
           instances.add(instance.result);
         else
-          continue constructors;
+          continue factories;
 
       }
       x = factory.newInstance(instances);
       if (x == null) {
         log.add(factoryFailure(factory));
-        continue constructors;
+        continue factories;
       }
       break;
 
     }
 
-    instantiated(x);
+    if (x != null)
+      instantiated(x);
+
+    if (x == null && log.size() == 0)
+      throw new AssertionError();
 
     return newReport(x, log);
   }
 
   private void instantiated(Object x) {
-    if (memoize && x != null) {
+    if (memoize) {
       refs.remove(typeRef(x.getClass()));
       refs.add(objectRef(x));
     }

@@ -1,7 +1,11 @@
 package org.chris_martin.jfie;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import static org.chris_martin.jfie.PartialOrder.Relation.*;
 
 interface PartialOrder<Node> {
 
@@ -27,6 +31,8 @@ interface PartialOrder<Node> {
    * The relation (or lack of relation) between a pair of nodes.
    */
   enum Relation {
+
+    EQUAL,
 
     /** {@code a} &gt; {@code b} */
     HIGHER,
@@ -56,14 +62,25 @@ final class PartialOrders {
     @Override
     public Set<Node> lowest(Set<? extends Node> u) {
 
+      for (Node node : u)
+        if (node == null)
+          throw new NullPointerException();
+
       Set<Node> bad = new HashSet<Node>();
 
-      for (Node a : u) for (Node b : u) {
+      List<Node> uList = new ArrayList<Node>();
+      uList.addAll(u);
+
+      for (int i = 0; i < uList.size(); i++) for (int j = i + 1; j < uList.size(); j++) {
+
+        Node a = uList.get(i), b = uList.get(j);
 
         Relation relation = definition.relation(a, b);
 
-        if (relation != Relation.UNDEFINED)
-          bad.add(relation == Relation.HIGHER ? a : b);
+        switch (relation) {
+          case HIGHER: case LOWER:
+            bad.add(relation == Relation.HIGHER ? a : b);
+        }
 
       }
 
@@ -80,5 +97,53 @@ final class PartialOrders {
 
   }
 
-}
+  static PartialOrder<Ref> refHierarchyPartialOrder() {
+    return RefHierarchy.PARTIAL_ORDER;
+  }
 
+  private static class RefHierarchy implements PartialOrder.ComparisonDefinition<Ref> {
+
+    private static final RefHierarchy INSTANCE = new RefHierarchy();
+    private static final PartialOrder<Ref> PARTIAL_ORDER = PartialOrders.partialOrder(INSTANCE);
+
+    @Override
+    public PartialOrder.Relation relation(Ref a, Ref b) {
+
+      if (a.type() != b.type())
+        return TypeHierarchy.INSTANCE.relation(a.type(), b.type());
+
+      if (a.isObject() != b.isObject())
+        return a.isObject() ? LOWER : HIGHER;
+
+      return EQUAL;
+    }
+
+  }
+
+  static PartialOrder<Class> typeHierarchyPartialOrder() {
+    return TypeHierarchy.PARTIAL_ORDER;
+  }
+
+  private static class TypeHierarchy implements PartialOrder.ComparisonDefinition<Class> {
+
+    private static final TypeHierarchy INSTANCE = new TypeHierarchy();
+    private static final PartialOrder<Class> PARTIAL_ORDER = PartialOrders.partialOrder(INSTANCE);
+
+    @Override
+    public PartialOrder.Relation relation(Class a, Class b) {
+
+      if (a == b)
+        return EQUAL;
+
+      if (a.isAssignableFrom(b))
+        return HIGHER;
+
+      if (b.isAssignableFrom(a))
+        return LOWER;
+
+      return UNDEFINED;
+    }
+
+  }
+
+}
