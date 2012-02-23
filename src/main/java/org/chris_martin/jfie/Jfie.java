@@ -1,10 +1,9 @@
 package org.chris_martin.jfie;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.chris_martin.jfie.Factories.constructorFactoriesByDescendingArity;
 import static org.chris_martin.jfie.FactoryLists.factoryList;
@@ -16,7 +15,6 @@ import static org.chris_martin.jfie.JfieException.newJfieException;
 import static org.chris_martin.jfie.JfieReport.newReport;
 import static org.chris_martin.jfie.JfieReport.nullReport;
 import static org.chris_martin.jfie.PartialOrders.refHierarchyPartialOrder;
-import static org.chris_martin.jfie.PartialOrders.typeHierarchyPartialOrder;
 import static org.chris_martin.jfie.Refs.*;
 
 /**
@@ -60,6 +58,14 @@ public final class Jfie {
   private final List<Jfie> jfies = new ArrayList<Jfie>();
   private final Set<Ref> refs = new HashSet<Ref>();
   private boolean memoize;
+
+  private final JfieFunction<Class, Object> instanceFinder = new JfieFunction<Class, Object>() {
+    @Override
+    public JfieReport<Object> apply(Class soughtType, FactoryList trace) {
+      return _get(soughtType, trace);
+    }
+  };
+  private final JfieFunction<Class, Object> proxyMagic = new ProxyMagic(instanceFinder);
 
   private Jfie() { }
 
@@ -147,7 +153,7 @@ public final class Jfie {
 
     if (match.type().isInterface()) {
 
-      JfieReport<T> magic = magic(soughtType, trace);
+      JfieReport<T> magic = (JfieReport) proxyMagic.apply(soughtType, trace);
       log.addAll(magic.problems);
 
       if (magic.result != null)
@@ -166,108 +172,6 @@ public final class Jfie {
     JfieReport<? extends T> x = instantiate((Class<? extends T>) match.type(), trace);
     log.addAll(x.problems);
     return newReport(x.result, log);
-  }
-
-  private <T> JfieReport<T> magic(Class<T> soughtType, FactoryList trace) {
-
-    Set<Class> parentTypes = typeHierarchyPartialOrder().lowest(
-      new HashSet<Class>(Arrays.asList(soughtType.getInterfaces())));
-
-    List<Problem> log = new ArrayList<Problem>();
-
-    List<Object> instances = new ArrayList<Object>();
-    for (Class parentType : parentTypes) {
-      JfieReport parent = _get(parentType, trace);
-      log.addAll(parent.problems);
-
-      if (parent.result == null)
-        return nullReport(log);
-
-      instances.add(parent.result);
-    }
-
-    final Map<Method, ObjectMethod> handlers = new HashMap<Method, ObjectMethod>();
-    for (Method method : soughtType.getMethods()) {
-
-      List<ObjectMethod> matches = findEquivalentMethods(instances, method);
-
-      if (matches.size() != 1)
-        return nullReport(log);
-
-      handlers.put(method, matches.get(0));
-
-    }
-
-    InvocationHandler invocationHandler = new InvocationHandler() {
-      @Override
-      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        return handlers.get(method).invoke(args);
-      }
-    };
-
-    ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-
-    T proxy = (T) Proxy.newProxyInstance(
-      classLoader, new Class[]{ soughtType }, invocationHandler);
-
-    return newReport(proxy, log);
-  }
-
-  private static class ObjectMethod {
-
-    final Object object;
-    final Method method;
-
-    private ObjectMethod(Object object, Method method) {
-      this.object = object;
-      this.method = method;
-    }
-
-    Object invoke(Object ... args) throws InvocationTargetException, IllegalAccessException {
-      return method.invoke(object, args);
-    }
-
-  }
-
-  private List<ObjectMethod> findEquivalentMethods(Iterable<Object> objects, Method method) {
-    List<ObjectMethod> equivalentMethods = new ArrayList<ObjectMethod>();
-    for (Object object : objects) {
-      Method equivalentMethod = findEquivalentMethod(object.getClass(), method);
-      if (equivalentMethod != null) {
-        equivalentMethods.add(new ObjectMethod(object, equivalentMethod));
-      }
-    }
-    return equivalentMethods;
-  }
-
-  private Method findEquivalentMethod(Class type, Method method) {
-
-    for (Method x : type.getMethods())
-      if (methodEquality(method, x))
-        return x;
-
-    return null;
-  }
-
-  private static boolean methodEquality(Method a, Method b) {
-
-    if (!a.getName().equals(b.getName()))
-      return false;
-
-    if (!a.getReturnType().equals(b.getReturnType()))
-      return false;
-
-    Class<?>[] params1 = a.getParameterTypes();
-    Class<?>[] params2 = b.getParameterTypes();
-
-    if (params1.length != params2.length)
-      return false;
-
-    for (int i = 0; i < params1.length; i++)
-      if (params1[i] != params2[i])
-        return false;
-
-    return true;
   }
 
   private <T> JfieReport<Set<Ref<T>>> findAllMatches(Class<T> soughtType, FactoryList trace) {
