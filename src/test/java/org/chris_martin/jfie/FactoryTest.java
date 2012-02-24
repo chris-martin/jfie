@@ -38,11 +38,11 @@ public class FactoryTest {
 
   public static class X { }
 
-  static class Y {
+  private static class Y {
     public Y() { }
   }
 
-  interface A { }
+  private interface A { }
 
   public static class B {
     private B() { }
