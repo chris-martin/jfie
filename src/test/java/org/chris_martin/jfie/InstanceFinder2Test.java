@@ -2,11 +2,16 @@ package org.chris_martin.jfie;
 
 import org.testng.annotations.Test;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.chris_martin.jfie.FactoryLists.factoryList;
-import static org.chris_martin.jfie.JfieException.*;
+import static org.chris_martin.jfie.JfieException.FactoryCycle;
+import static org.chris_martin.jfie.JfieException.FactoryFailure;
 import static org.chris_martin.jfie.JfieState.jfieState;
 import static org.mockito.Mockito.mock;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 public class InstanceFinder2Test {
 
@@ -15,9 +20,16 @@ public class InstanceFinder2Test {
     JfieReport<Int> report = instanceFinder("abc").apply(Int.class, factoryList());
     assertNull(report.result);
     assertEquals(report.problems.size(), 2, report.problems.toString());
-    Problem a = report.problems.get(0), b = report.problems.get(1);
-    assertTrue(a instanceof FactoryFailure || b instanceof FactoryFailure);
-    assertTrue(a instanceof FactoryCycle || b instanceof FactoryCycle);
+
+    Set<Class> problemTypes = new HashSet<Class>();
+    problemTypes.add(report.problems.get(0).getClass());
+    problemTypes.add(report.problems.get(1).getClass());
+
+    Set<Class> expectedProblemTypes = new HashSet<Class>();
+    expectedProblemTypes.add(FactoryFailure.class);
+    expectedProblemTypes.add(FactoryCycle.class);
+
+    assertEquals(problemTypes, expectedProblemTypes);
   }
 
   @Test
