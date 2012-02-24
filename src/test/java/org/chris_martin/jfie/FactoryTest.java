@@ -22,10 +22,30 @@ public class FactoryTest {
     assertEquals(factories.size(), 1);
   }
 
+  @Test
+  public void test3() {
+    List<? extends Factory<A>> factories =
+      Factories.constructorFactoriesByDescendingArity(A.class);
+    assertEquals(factories.size(), 0);
+  }
+
+  @Test
+  public void test4() {
+    List<? extends Factory<B>> factories =
+      Factories.constructorFactoriesByDescendingArity(B.class);
+    assertEquals(factories.size(), 0);
+  }
+
   public static class X { }
 
   static class Y {
     public Y() { }
+  }
+
+  interface A { }
+
+  public static class B {
+    private B() { }
   }
 
 }
