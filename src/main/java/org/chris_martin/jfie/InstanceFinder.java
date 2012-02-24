@@ -5,10 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.chris_martin.jfie.Factories.constructorFactoriesByDescendingArity;
 import static org.chris_martin.jfie.JfieException.BeMoreSpecific.beMoreSpecific;
-import static org.chris_martin.jfie.JfieException.FactoryFailure.factoryFailure;
-import static org.chris_martin.jfie.JfieException.NoFactories.noFactories;
 import static org.chris_martin.jfie.JfieReport.newReport;
 import static org.chris_martin.jfie.JfieReport.nullReport;
 import static org.chris_martin.jfie.PartialOrders.refHierarchyPartialOrder;
@@ -17,14 +14,14 @@ import static org.chris_martin.jfie.Refs.typeRef;
 
 class InstanceFinder implements JfieFunction<Class, Object> {
 
-  private final JfieFunction<Class, Object> proxyMagic = new ProxyMagic(this);
-
   private final JfieStateView config;
-  private final InstanceListener instanceListener;
+  private final JfieFunction<Class, Object> instantiator;
+  private final JfieFunction<Class, Object> proxyMagic;
 
   InstanceFinder(JfieStateView config, InstanceListener instanceListener) {
     this.config = config;
-    this.instanceListener = instanceListener;
+    instantiator = new Instantiator(this, instanceListener);
+    proxyMagic = new ProxyMagic(this);
   }
 
   @Override
@@ -76,7 +73,7 @@ class InstanceFinder implements JfieFunction<Class, Object> {
       }
     }
 
-    JfieReport x = instantiate(match.type(), trace);
+    JfieReport x = instantiator.apply(match.type(), trace);
     log.addAll(x.problems);
     return newReport(x.result, log);
   }
@@ -118,51 +115,6 @@ class InstanceFinder implements JfieFunction<Class, Object> {
     }
 
     return JfieReport.newReport(matches, log);
-  }
-
-  private <T> JfieReport<T> instantiate(Class<T> type, FactoryList trace) {
-
-    T x = null;
-
-    List<JfieException.Problem> log = new ArrayList<JfieException.Problem>();
-
-    List<? extends Factory<T>> factoryList = constructorFactoriesByDescendingArity(type);
-
-    if (factoryList.size() == 0)
-      log.add(noFactories(type));
-
-    factories: for (Factory<T> factory : factoryList) {
-
-      FactoryList trace2 = trace.add(factory);
-
-      List<Object> instances = new ArrayList<Object>();
-      for (Class arg : factory.parameterTypes()) {
-
-        JfieReport instance = apply(arg, trace2);
-        log.addAll(instance.problems);
-
-        if (instance.result != null)
-          instances.add(instance.result);
-        else
-          continue factories;
-
-      }
-      x = factory.newInstance(instances);
-      if (x == null) {
-        log.add(factoryFailure(factory));
-        continue factories;
-      }
-      break;
-
-    }
-
-    if (x == null && log.size() == 0)
-      throw new AssertionError();
-
-    if (x != null)
-      instanceListener.onInstantiate(x);
-
-    return newReport(x, log);
   }
 
 }
