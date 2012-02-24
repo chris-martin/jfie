@@ -3,6 +3,7 @@ package org.chris_martin.jfie;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -169,6 +170,11 @@ public class JfieTest {
     S2 s = jfie.get(S2.class);
     assertNotNull(s);
     assertEquals(s.r(), ";p;");
+  }
+
+  @Test(expectedExceptions = JfieException.class)
+  public void test23() {
+    jfie().get(R.class);
   }
 
   static interface R { String r(); }
