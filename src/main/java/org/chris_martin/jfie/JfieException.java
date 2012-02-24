@@ -38,25 +38,6 @@ public final class JfieException extends RuntimeException {
 
   static class Problem { }
 
-  public static final class NoOptions extends Problem {
-
-    private final Class type;
-
-    private NoOptions(Class type) {
-      this.type = type;
-    }
-
-    static NoOptions noOptions(Class type) {
-      return new NoOptions(type);
-    }
-
-    @Override
-    public String toString() {
-      return "No options for " + type.getName();
-    }
-
-  }
-
   public static final class BeMoreSpecific extends Problem {
 
     private final Class type;
