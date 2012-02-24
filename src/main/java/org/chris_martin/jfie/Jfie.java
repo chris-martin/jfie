@@ -2,6 +2,7 @@ package org.chris_martin.jfie;
 
 import static org.chris_martin.jfie.FactoryLists.factoryList;
 import static org.chris_martin.jfie.JfieException.newJfieException;
+import static org.chris_martin.jfie.JfieState.jfieState;
 
 /**
  * <p style="font-weight: bold;">Classes with multiple constructors</p>
@@ -51,7 +52,7 @@ public final class Jfie {
    * @throws NullPointerException If any of the {@code args} are null.
    */
   public static Jfie jfie(Object ... args) {
-    return new Jfie(new JfieState(args));
+    return new Jfie(jfieState(args));
   }
 
   /**

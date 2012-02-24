@@ -20,12 +20,6 @@ final class FactoryLists {
     return new Impl();
   }
 
-  static FactoryList factoryList(Iterable<Factory> factories) {
-    Impl x = new Impl();
-    for (Factory factory : factories) x.add(factory);
-    return x;
-  }
-
   private static class Impl implements FactoryList {
 
     private final ArrayList<Factory> list = new ArrayList<Factory>();

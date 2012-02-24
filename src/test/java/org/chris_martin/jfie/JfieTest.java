@@ -3,7 +3,6 @@ package org.chris_martin.jfie;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -13,24 +12,6 @@ import static org.chris_martin.jfie.Jfie.jfie;
 import static org.testng.Assert.*;
 
 public class JfieTest {
-
-  @Test
-  public void test1() {
-    Jfie jfie = jfie("abc");
-    assertEquals(jfie.get(Object.class), "abc");
-  }
-
-  @Test
-  public void test2() {
-    Jfie jfie = jfie("abc");
-    assertEquals(jfie.get(String.class), "abc");
-  }
-
-  @Test(expectedExceptions = JfieException.class)
-  public void test3() {
-    Jfie jfie = jfie("abc");
-    assertNull(jfie.get(Integer.class));
-  }
 
   @Test
   public void test4() {

@@ -35,8 +35,7 @@ final class Refs {
     if (x == null)
       return null;
 
-    // Check for a common programmer error
-    // (you shouldn't be nesting refs).
+    // Sanity check (you shouldn't be nesting refs).
     if (x instanceof Ref)
       throw new IllegalArgumentException();
 
@@ -47,6 +46,8 @@ final class Refs {
 
     if (x == null)
       return null;
+
+    x = Primitives.box(x);
 
     return new TypeImpl<T>(x);
   }

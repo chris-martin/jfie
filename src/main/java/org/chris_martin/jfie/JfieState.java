@@ -15,7 +15,11 @@ class JfieState implements JfieStateView, InstanceListener {
   private final Set<Ref> refs = new HashSet<Ref>();
   private boolean memoize;
 
-  JfieState(Object ... args) {
+  static JfieState jfieState(Object ... args) {
+    return new JfieState(args);
+  }
+
+  private JfieState(Object ... args) {
 
     for (Object arg : args)
       add(arg);
@@ -57,7 +61,7 @@ class JfieState implements JfieStateView, InstanceListener {
 
   JfieState memoize() {
 
-    JfieState x = new JfieState();
+    JfieState x = jfieState();
 
     x.jfies.addAll(jfies);
     x.refs.addAll(refs);
