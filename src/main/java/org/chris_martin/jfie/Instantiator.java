@@ -36,9 +36,9 @@ class Instantiator implements ClassToObjectFunction {
       FactoryList trace2 = trace.add(factory);
 
       List<Object> instances = new ArrayList<Object>();
-      for (Class arg : factory.parameterTypes()) {
+      for (Class<?> arg : factory.parameterTypes()) {
 
-        JfieReport instance = instanceFinder.apply(arg, trace2);
+        JfieReport<?> instance = instanceFinder.apply(arg, trace2);
         log.addAll(instance.problems);
 
         if (instance.result != null)
