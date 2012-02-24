@@ -18,12 +18,6 @@ public final class JfieException extends RuntimeException {
     throw x;
   }
 
-  List<Problem> getExceptions() {
-    List<Problem> copy = new ArrayList<Problem>();
-    copy.addAll(exceptions);
-    return copy;
-  }
-
   @Override
   public String getMessage() {
 
