@@ -8,30 +8,30 @@ import static org.chris_martin.jfie.JfieException.FactoryFailure.factoryFailure;
 import static org.chris_martin.jfie.JfieException.NoFactories.noFactories;
 import static org.chris_martin.jfie.JfieReport.newReport;
 
-class Instantiator implements JfieFunction<Class, Object> {
+class Instantiator implements ClassToObjectFunction {
 
-  private final JfieFunction<Class, Object> instanceFinder;
+  private final ClassToObjectFunction instanceFinder;
   private final InstanceListener instanceListener;
 
-  Instantiator(JfieFunction<Class, Object> instanceFinder, InstanceListener instanceListener) {
+  Instantiator(ClassToObjectFunction instanceFinder, InstanceListener instanceListener) {
     this.instanceFinder = instanceFinder;
     this.instanceListener = instanceListener;
   }
 
   @Override
-  public JfieReport<Object> apply(Class type, FactoryList trace) {
+  public <T> JfieReport<T> apply(Class<T> type, FactoryList trace) {
 
-    Object x = null;
+    T x = null;
 
     List<JfieException.Problem> log = new ArrayList<JfieException.Problem>();
 
-    List<? extends Factory<Object>> factoryList =
+    List<? extends Factory<T>> factoryList =
       constructorFactoriesByDescendingArity(type);
 
     if (factoryList.size() == 0)
       log.add(noFactories(type));
 
-    factories: for (Factory<?> factory : factoryList) {
+    factories: for (Factory<T> factory : factoryList) {
 
       FactoryList trace2 = trace.add(factory);
 

@@ -10,16 +10,16 @@ import static org.chris_martin.jfie.JfieReport.newReport;
 import static org.chris_martin.jfie.JfieReport.nullReport;
 import static org.chris_martin.jfie.PartialOrders.typeHierarchyPartialOrder;
 
-final class ProxyMagic implements JfieFunction<Class, Object> {
+final class ProxyMagic implements ClassToObjectFunction {
 
-  private final JfieFunction<Class, Object> instanceFinder;
+  private final ClassToObjectFunction instanceFinder;
 
-  ProxyMagic(JfieFunction<Class, Object> instanceFinder) {
+  ProxyMagic(ClassToObjectFunction instanceFinder) {
     this.instanceFinder = instanceFinder;
   }
 
   @Override
-  public JfieReport<Object> apply(Class soughtType, FactoryList trace) {
+  public <T> JfieReport<T> apply(Class<T> soughtType, FactoryList trace) {
 
     Set<Class> parentTypes = typeHierarchyPartialOrder().lowest(
       new HashSet<Class>(Arrays.asList(soughtType.getInterfaces())));
@@ -58,7 +58,7 @@ final class ProxyMagic implements JfieFunction<Class, Object> {
 
     ClassLoader classLoader = ClassLoader.getSystemClassLoader();
 
-    Object proxy = Proxy.newProxyInstance(
+    T proxy = (T) Proxy.newProxyInstance(
       classLoader, new Class[]{soughtType}, invocationHandler);
 
     return newReport(proxy, log);

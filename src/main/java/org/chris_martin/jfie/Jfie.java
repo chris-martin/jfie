@@ -42,7 +42,7 @@ if it notices even the possibility of any of that shit going on.</p>
 public final class Jfie {
 
   final JfieState state;
-  final JfieFunction<Class, Object> instanceFinder;
+  final ClassToObjectFunction instanceFinder;
 
   private Jfie(JfieState state) {
     this.state = state;

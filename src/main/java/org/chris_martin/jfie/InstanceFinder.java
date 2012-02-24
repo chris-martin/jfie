@@ -12,11 +12,11 @@ import static org.chris_martin.jfie.PartialOrders.refHierarchyPartialOrder;
 import static org.chris_martin.jfie.Refs.objectRef;
 import static org.chris_martin.jfie.Refs.typeRef;
 
-class InstanceFinder implements JfieFunction<Class, Object> {
+class InstanceFinder implements ClassToObjectFunction {
 
   private final JfieStateView config;
-  private final JfieFunction<Class, Object> instantiator;
-  private final JfieFunction<Class, Object> proxyMagic;
+  private final ClassToObjectFunction instantiator;
+  private final ClassToObjectFunction proxyMagic;
 
   InstanceFinder(JfieStateView config, InstanceListener instanceListener) {
     this.config = config;
@@ -25,16 +25,16 @@ class InstanceFinder implements JfieFunction<Class, Object> {
   }
 
   @Override
-  public JfieReport<Object> apply(Class soughtType, FactoryList trace) {
+  public <T> JfieReport<T> apply(Class<T> soughtType, FactoryList trace) {
 
     List<JfieException.Problem> log = new ArrayList<JfieException.Problem>();
 
-    Ref match;
+    Ref<T> match;
     {
 
-      Set<Ref> matches;
+      Set<Ref<T>> matches;
       {
-        JfieReport<Set<Ref>> matchesReport = findAllMatches(soughtType, trace);
+        JfieReport<Set<Ref<T>>> matchesReport = findAllMatches(soughtType, trace);
         matches = matchesReport.result;
         log.addAll(matchesReport.problems);
       }
@@ -57,7 +57,7 @@ class InstanceFinder implements JfieFunction<Class, Object> {
 
     if (match.type().isInterface()) {
 
-      JfieReport magic = (JfieReport) proxyMagic.apply(soughtType, trace);
+      JfieReport<T> magic = (JfieReport) proxyMagic.apply(soughtType, trace);
       log.addAll(magic.problems);
 
       if (magic.result != null)
@@ -73,15 +73,15 @@ class InstanceFinder implements JfieFunction<Class, Object> {
       }
     }
 
-    JfieReport x = instantiator.apply(match.type(), trace);
+    JfieReport<? extends T> x = instantiator.apply(match.type(), trace);
     log.addAll(x.problems);
     return newReport(x.result, log);
   }
 
 
-  private JfieReport<Set<Ref>> findAllMatches(Class soughtType, FactoryList trace) {
+  private <T> JfieReport<Set<Ref<T>>> findAllMatches(Class<T> soughtType, FactoryList trace) {
 
-    Set<Ref> matches = new HashSet<Ref>();
+    Set<Ref<T>> matches = new HashSet<Ref<T>>();
 
     matches.add(typeRef(soughtType));
 
@@ -91,22 +91,20 @@ class InstanceFinder implements JfieFunction<Class, Object> {
       Class type = ref.type();
       if (ref.isType()) {
         if (type != soughtType && soughtType.isAssignableFrom(type)) {
-          JfieReport report = apply(type, trace);
+          JfieReport<T> report = apply(type, trace);
           log.addAll(report.problems);
 
           if (report.result != null)
             matches.add(objectRef(report.result));
 
         }
-      } else {
-        if (soughtType.isAssignableFrom(ref.type())) {
-          matches.add(ref);
-        }
+      } else if (soughtType.isAssignableFrom(ref.type())) {
+        matches.add(ref);
       }
     }
 
     for (Jfie jfie : config.jfies()) {
-      JfieReport report = jfie.instanceFinder.apply(soughtType, trace);
+      JfieReport<T> report = jfie.instanceFinder.apply(soughtType, trace);
       log.addAll(report.problems);
 
       if (report.result != null)
