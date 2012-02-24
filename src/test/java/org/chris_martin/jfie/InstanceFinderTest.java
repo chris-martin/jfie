@@ -3,6 +3,7 @@ package org.chris_martin.jfie;
 import org.testng.annotations.Test;
 
 import static org.chris_martin.jfie.FactoryLists.factoryList;
+import static org.chris_martin.jfie.Jfie.jfie;
 import static org.chris_martin.jfie.JfieException.*;
 import static org.chris_martin.jfie.JfieState.jfieState;
 import static org.mockito.Mockito.*;
@@ -38,6 +39,12 @@ public class InstanceFinderTest {
     assertTrue(a instanceof FactoryCycle || b instanceof FactoryCycle);
   }
 
+  @Test
+  public void test4() {
+    Jfie jfie = jfie("42");
+    assertEquals(jfie.get(Int.class), new Int(42));
+  }
+
   static class Int {
 
     private int i;
@@ -52,6 +59,16 @@ public class InstanceFinderTest {
 
     public Int(String s) {
       this(Integer.parseInt(s));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return o.getClass() == Int.class && ((Int) o).i == i;
+    }
+
+    @Override
+    public int hashCode() {
+      return i;
     }
 
   }

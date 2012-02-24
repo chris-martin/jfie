@@ -93,12 +93,6 @@ public class JfieTest {
   }
 
   @Test
-  public void test16() {
-    Jfie jfie = jfie("42");
-    assertEquals(jfie.get(Integer.class), Integer.valueOf(42));
-  }
-
-  @Test
   public void test17() {
     Jfie jfie = jfie(DoubleStringWrapper.class, "xyz");
     DoubleStringWrapper a = jfie.get(DoubleStringWrapper.class);
