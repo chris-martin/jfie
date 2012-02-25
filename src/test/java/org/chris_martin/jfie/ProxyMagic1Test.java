@@ -48,10 +48,6 @@ public class ProxyMagic1Test {
 
   }
 
-  private <T> T magic(Class<T> type) {
-    return new ProxyMagic(instanceFinder()).apply(type, factoryList()).result;
-  }
-
   private ClassToObjectFunction instanceFinder() {
     return new ClassToObjectFunction() {
       @Override
