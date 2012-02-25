@@ -13,11 +13,12 @@ import static org.mockito.Mockito.mock;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 
-public class InstanceFinder2Test {
+public class InstanceFinder_Int_Test {
 
   @Test
   public void test1() {
-    JfieReport<Int> report = instanceFinder("abc").apply(Int.class, factoryList());
+    InstanceFinder instanceFinder = instanceFinder("abc");
+    JfieReport<Int> report = instanceFinder.apply(Int.class, factoryList());
     assertNull(report.result);
     assertEquals(report.problems.size(), 2, report.problems.toString());
 
@@ -34,7 +35,8 @@ public class InstanceFinder2Test {
 
   @Test
   public void test2() {
-    Int x = instanceFinder("42").apply(Int.class, factoryList()).result;
+    InstanceFinder instanceFinder = instanceFinder("42");
+    Int x = instanceFinder.apply(Int.class, factoryList()).result;
     assertEquals(x, new Int(42));
   }
 

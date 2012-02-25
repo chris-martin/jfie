@@ -10,8 +10,8 @@ public class ProxyMagic2Test {
 
   @Test
   public void test() {
-    IZ z = new ProxyMagic(instanceFinder())
-      .apply(IZ.class, factoryList()).result;
+    ProxyMagic magic = new ProxyMagic(instanceFinder());
+    IZ z = magic.apply(IZ.class, factoryList()).result;
     assertNotNull(z);
     assertEquals(z.x(), "xxx");
     assertEquals(z.y(), "yyy");

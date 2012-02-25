@@ -10,16 +10,16 @@ public class ProxyMagic1Test {
 
   @Test
   public void test1() {
-    ChildA a = new ProxyMagic(instanceFinder())
-      .apply(ChildA.class, factoryList()).result;
+    ProxyMagic magic = new ProxyMagic(instanceFinder());
+    ChildA a = magic.apply(ChildA.class, factoryList()).result;
     assertNotNull(a);
     assertEquals(a.xyz(), ";p;");
   }
 
   @Test
   public void test2() {
-    ChildB b = new ProxyMagic(instanceFinder())
-      .apply(ChildB.class, factoryList()).result;
+    ProxyMagic magic = new ProxyMagic(instanceFinder());
+    ChildB b = magic.apply(ChildB.class, factoryList()).result;
     assertNotNull(b);
     assertEquals(b.xyz(), ";p;");
   }
