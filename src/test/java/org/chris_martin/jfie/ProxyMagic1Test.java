@@ -2,14 +2,7 @@ package org.chris_martin.jfie;
 
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import static org.chris_martin.jfie.FactoryLists.factoryList;
-import static org.chris_martin.jfie.JfieException.NoFactories.noFactories;
-import static org.chris_martin.jfie.JfieException.Problem;
-import static org.chris_martin.jfie.JfieReport.newReport;
-import static org.chris_martin.jfie.JfieReport.nullReport;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
@@ -49,16 +42,9 @@ public class ProxyMagic1Test {
   }
 
   private ClassToObjectFunction instanceFinder() {
-    return new ClassToObjectFunction() {
-      @Override
-      public <T> JfieReport apply(Class<T> type, FactoryList trace) {
-
-        if (type == Parent.class)
-          return newReport(new ParentImpl(), new ArrayList<Problem>());
-
-        return nullReport(Arrays.<Problem>asList(noFactories(type)));
-      }
-    };
+    ClassToInstanceMap x = new ClassToInstanceMap();
+    x.map.put(Parent.class, new ParentImpl());
+    return x;
   }
 
 }
